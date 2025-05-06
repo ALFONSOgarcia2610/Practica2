@@ -4,6 +4,8 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Home, LogOut } from "lucide-react"; // Importamos el ícono de casa
 import logo from "../coa.png";
+import climaIcon from "../clima.png"; // Imagen para "Clima"
+import pokedexIcon from "../poke.png"; // Imagen para "Pokedex"
 
 export default function Header() {
   const { isAuthenticated, logout } = useAuth(); // Usamos logout también
@@ -14,27 +16,30 @@ export default function Header() {
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-2 text-white p-2">
-              <img src={logo} alt="Logo COACMES" className="w-6 h-6" /> {/* Imagen del logo */}
+              
               <Home className="w-6 h-6" /> {/* Ícono de casa */}
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-64 bg-blue-50">
             <nav className="flex flex-col gap-4 p-4">
-              <div className="font-bold text-lg text-blue-700">
+              <div  className="font-bold text-lg text-blue-700 flex items-center gap-2">
+              <img src={logo} alt="Pokedex" className="w-6 h-6" /> {/* Imagen de Pokedex */}
                 <Link to="/" className="hover:underline">
-                  Inicio
+                  INICIO
                 </Link>
               </div>
 
               {isAuthenticated && (
                 <>
-                  <div className="font-bold text-lg text-blue-700">
+                  <div className="font-bold text-lg text-blue-700 flex items-center gap-2">
+                    <img src={climaIcon} alt="Clima" className="w-6 h-6" /> {/* Imagen de Clima */}
                     <Link to="/demo/form/Clima" className="hover:underline">
                       Clima
                     </Link>
                   </div>
 
-                  <div className="font-bold text-lg text-blue-700">
+                  <div className="font-bold text-lg text-blue-700 flex items-center gap-2">
+                    <img src={pokedexIcon} alt="Pokedex" className="w-6 h-6" /> {/* Imagen de Pokedex */}
                     <Link to="/demo/form/Pokemon" className="hover:underline">
                       Pokedex
                     </Link>
