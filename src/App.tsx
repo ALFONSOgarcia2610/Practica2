@@ -47,9 +47,20 @@ function App() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r bg-blue-50 ">
-      <Card className="w-full max-w-md shadow-xl/30 ">
-        <CardHeader className="flex flex-col items-center ">
+    <div className="relative flex items-center justify-center min-h-screen bg-blue-50">
+      {/* Imagen de fondo en la esquina inferior izquierda */}
+      <div
+        className="absolute bottom-0 left-0 w-full h-full bg-no-repeat bg-cover opacity-50"
+        style={{
+          backgroundImage: `url(${logo})`,
+          backgroundPosition: "left bottom", // Posiciona la imagen en la esquina inferior izquierda
+          backgroundSize: "30%", // Ajusta el tamaño de la imagen
+        }}
+      ></div>
+
+      {/* Contenido principal */}
+      <Card className="relative z-10 w-full max-w-md shadow-xl/30">
+        <CardHeader className="flex flex-col items-center">
           <img
             src={logo}
             className="h-40 w-40 object-contain mb-6"
@@ -83,7 +94,7 @@ function App() {
               <Button
                 type="submit"
                 className="w-full bg-blue-500 transition delay-350 duration-500 ease-in-out hover:-translate-y-1 hover:scale-110 hover:bg-indigo-500"
-                disabled={loginMutation.isLoading} // Deshabilitar el botón mientras se procesa
+                disabled={loginMutation.isLoading}
               >
                 {loginMutation.isLoading ? "Cargando..." : "Iniciar sesión"}
               </Button>

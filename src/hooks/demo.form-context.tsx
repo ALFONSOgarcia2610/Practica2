@@ -4,6 +4,7 @@ import { getClimaByCity } from "../apis/climapi";
 import { Thermometer, Wind, MapPin } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"; // Importamos los componentes de shadcn
 import clima from "../clima.png";
+import logo from "../coa.png";
 export const DemoForm = () => {
   const [city, setCity] = useState("");
 
@@ -22,13 +23,24 @@ export const DemoForm = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-blue-50 p-4">
-      <Card className="w-full max-w-md shadow-lg">
+    <div className="relative flex flex-col items-center justify-center min-h-screen bg-blue-50 p-4">
+      {/* Imagen de fondo en la esquina inferior izquierda */}
+      <div
+        className="absolute bottom-0 left-0 w-full h-full bg-no-repeat bg-cover opacity-50"
+        style={{
+          backgroundImage: `url(${logo})`,
+          backgroundPosition: "left bottom", // Posiciona la imagen en la esquina inferior izquierda
+          backgroundSize: "30%", // Ajusta el tamaño de la imagen
+        }}
+      ></div>
+
+      {/* Contenido principal */}
+      <Card className="relative z-10 w-full max-w-md shadow-lg">
         <CardHeader className="flex flex-col items-center">
           <img
             src={clima}
             alt="Clima"
-            className="w-16 h-16 mb-4"
+            className="w-30 h-30 mb-4"
           />
           <CardTitle className="text-center text-2xl font-bold text-blue-700">
             Consulta el Clima
