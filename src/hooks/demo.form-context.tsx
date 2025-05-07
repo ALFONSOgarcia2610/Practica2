@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getClimaByCity } from "../apis/climapi";
+import { Thermometer, Wind, MapPin } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"; // Importamos los componentes de shadcn
-import clima from "../clima.png"; 
+import clima from "../clima.png";
 export const DemoForm = () => {
   const [city, setCity] = useState("");
 
@@ -47,19 +48,52 @@ export const DemoForm = () => {
           >
             Buscar
           </button>
-          {isLoading && <p className="text-gray-500 mt-4">Cargando...</p>}
+          {isLoading && (
+            <button
+              type="button"
+              className="bg-indigo-500 text-white px-4 py-2 rounded flex items-center gap-2 mt-4 mx-auto"
+              disabled
+            >
+              <svg
+                className="w-5 h-5 animate-spin motion-reduce:hidden"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                />
+              </svg>
+              Cargando
+            </button>
+          )}
+
           {error && <p className="text-red-500 mt-4">Error: {(error as Error).message}</p>}
           {data && (
-            <div className="bg-white shadow-md rounded-lg p-4 mt-4">
-              <p className="text-lg font-semibold text-gray-700">
-                Ciudad: <span className="text-blue-600">{data.name}</span>
-              </p>
-              <p className="text-lg font-semibold text-gray-700">
-                Temperatura: <span className="text-blue-600">{data.main.temp}°C</span>
-              </p>
-              <p className="text-lg font-semibold text-gray-700">
-                Viento: <span className="text-blue-600">{data.wind.speed} km/h</span>
-              </p>
+            <div className="bg-white shadow-md rounded-lg p-4 mt-4 space-y-3">
+              <div className="flex items-center text-lg font-semibold text-gray-700">
+                <MapPin className="mr-2 text-blue-600" />
+                Ciudad: <span className="ml-1 text-blue-600">{data.name}</span>
+              </div>
+              <div className="flex items-center text-lg font-semibold text-gray-700">
+                <Thermometer className="mr-2 text-blue-600" />
+                Temperatura: <span className="ml-1 text-blue-600">{data.main.temp}°C</span>
+              </div>
+              <div className="flex items-center text-lg font-semibold text-gray-700">
+                <Wind className="mr-2 text-blue-600" />
+                Viento: <span className="ml-1 text-blue-600">{data.wind.speed} km/h</span>
+              </div>
             </div>
           )}
         </CardContent>

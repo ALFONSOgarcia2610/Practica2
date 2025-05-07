@@ -1,28 +1,54 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import logo from "./coa.png";
-import { useAuth } from "./main"; // Importamos el hook del contexto
+import { useAuth } from "./main";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useMutation } from "@tanstack/react-query"; // Importar useMutation
+import { loginUser } from "./db/db"; // Importar la función de inicio de sesión
 
 function App() {
-  const { isAuthenticated, login } = useAuth(); // Usamos el contexto
-  const [username, setUsername] = useState("");
+  const { isAuthenticated, setIsAuthenticated, username, setUsername } =
+    useAuth();
+
+  const [inputUser, setInputUser] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Configurar la mutación para el inicio de sesión
+  const loginMutation = useMutation({
+    mutationFn: loginUser, // Función que realiza la solicitud al backend
+    onSuccess: (data) => {
+      console.log("Inicio de sesión exitoso:", data);
+      setIsAuthenticated(true);
+      setUsername(inputUser);
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("username", inputUser);
+      localStorage.setItem("token", data.token); // Guardar el token en localStorage
+      setErrorMessage("");
+      setInputUser("");
+      setPassword("");
+    },
+    onError: (error: any) => {
+      console.error("Error al iniciar sesión:", error);
+      setErrorMessage(error.message || "Error al iniciar sesión");
+      setIsAuthenticated(false);
+      setUsername(null);
+      localStorage.setItem("isAuthenticated", "false");
+      localStorage.removeItem("username");
+      localStorage.removeItem("token");
+    },
+  });
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const success = login(username, password); // Llamamos a login del contexto
-    if (!success) {
-      setErrorMessage("Credenciales inválidas");
-    }
+    loginMutation.mutate({ username: inputUser, password }); // Llamar a la mutación
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r bg-blue-50">
-      <Card className="w-full max-w-md ">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r bg-blue-50 ">
+      <Card className="w-full max-w-md shadow-xl/30 ">
         <CardHeader className="flex flex-col items-center ">
           <img
             src={logo}
@@ -34,35 +60,40 @@ function App() {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {loginMutation.isError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
+
           {!isAuthenticated ? (
             <form onSubmit={handleLogin} className="space-y-4">
               <Input
                 type="text"
                 placeholder="Usuario"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                value={inputUser}
+                onChange={(e) => setInputUser(e.target.value)}
               />
               <Input
                 type="password"
                 placeholder="Contraseña"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="border-gray-300 focus:ring-blue-500 focus:border-blue-500"
               />
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                Iniciar sesión
+              <Button
+                type="submit"
+                className="w-full bg-blue-500 transition delay-350 duration-500 ease-in-out hover:-translate-y-1 hover:scale-110 hover:bg-indigo-500"
+                disabled={loginMutation.isLoading} // Deshabilitar el botón mientras se procesa
+              >
+                {loginMutation.isLoading ? "Cargando..." : "Iniciar sesión"}
               </Button>
-              {errorMessage && (
-                <Alert variant="destructive" className="mt-2">
-                  <AlertDescription>{errorMessage}</AlertDescription>
-                </Alert>
-              )}
             </form>
           ) : (
-            <p className="text-center mt-4 text-lg font-semibold text-gray-700">
-              ¡Bienvenido, {username}!
-            </p>
+            <div className="text-center mt-4">
+              <p className="text-lg font-semibold text-gray-700 mb-2">
+                ¡Bienvenido, {username}!
+              </p>
+            </div>
           )}
         </CardContent>
       </Card>
