@@ -4,35 +4,42 @@ import { useAuth } from "./main";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useMutation } from "@tanstack/react-query"; // Importar useMutation
-import { loginUser } from "./db/db"; // Importar la función de inicio de sesión
+import { useMutation } from "@tanstack/react-query";
+import { registerUser, loginUser } from "./db/db";
+import { toast } from "sonner";
 
 function App() {
-  const { isAuthenticated, setIsAuthenticated, username, setUsername } =
-    useAuth();
+  const { isAuthenticated, setIsAuthenticated, username, setUsername } = useAuth();
 
   const [inputUser, setInputUser] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [isRegister, setIsRegister] = useState(false); // Estado para alternar entre login y registro
 
-  // Configurar la mutación para el inicio de sesión
+  // Mutación para iniciar sesión
   const loginMutation = useMutation({
-    mutationFn: loginUser, // Función que realiza la solicitud al backend
+    mutationFn: loginUser,
     onSuccess: (data) => {
       console.log("Inicio de sesión exitoso:", data);
       setIsAuthenticated(true);
       setUsername(inputUser);
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("username", inputUser);
-      localStorage.setItem("token", data.token); // Guardar el token en localStorage
+      localStorage.setItem("token", data.token);
       setErrorMessage("");
       setInputUser("");
       setPassword("");
+
+      // Mostrar toast de éxito
+      toast.success("Inicio de sesión exitoso", {
+        position: "bottom-right",
+        duration: 3000,
+      });
     },
     onError: (error: any) => {
       console.error("Error al iniciar sesión:", error);
-      setErrorMessage(error.message || "Error al iniciar sesión");
+      const msg = error.message || "Error al iniciar sesión";
+      setErrorMessage(msg);
       setIsAuthenticated(false);
       setUsername(null);
       localStorage.setItem("isAuthenticated", "false");
@@ -41,67 +48,141 @@ function App() {
     },
   });
 
+  // Mutación para registrar un usuario
+  const registerMutation = useMutation({
+    mutationFn: async ({ username, password }: { username: string; password: string }) => {
+      return await registerUser(username, password);
+    },
+    onSuccess: () => {
+      toast.success("Registro exitoso. Iniciando sesión automáticamente...", {
+        position: "bottom-right",
+      });
+
+      // Iniciar sesión automáticamente después del registro
+      loginMutation.mutate({ username: inputUser, password });
+    },
+    onError: (error: any) => {
+      console.error("Error al registrarse:", error);
+      toast.error(error.message || "Error al registrarse", {
+        position: "bottom-right",
+      });
+    },
+  });
+
+  // Mostrar toast si hay error en el inicio de sesión
+  useEffect(() => {
+    if (loginMutation.isError && errorMessage) {
+      toast.error("Error de inicio de sesión", {
+        description: errorMessage,
+        position: "bottom-right",
+        duration: 3000,
+      });
+    }
+  }, [loginMutation.isError, errorMessage]);
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    loginMutation.mutate({ username: inputUser, password }); // Llamar a la mutación
+    loginMutation.mutate({ username: inputUser, password });
+  };
+
+  const handleRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!inputUser || !password) {
+      toast.error("Por favor, completa todos los campos.");
+      return;
+    }
+
+    registerMutation.mutate({ username: inputUser, password });
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen bg-blue-50">
-      {/* Imagen de fondo en la esquina inferior izquierda */}
+    <div className="relative flex items-center justify-center min-h-screen bg-background text-foreground">
       <div
         className="absolute bottom-0 left-0 w-full h-full bg-no-repeat bg-cover opacity-50"
         style={{
           backgroundImage: `url(${logo})`,
-          backgroundPosition: "left bottom", // Posiciona la imagen en la esquina inferior izquierda
-          backgroundSize: "30%", // Ajusta el tamaño de la imagen
+          backgroundPosition: "left bottom",
+          backgroundSize: "30%",
         }}
       ></div>
 
-      {/* Contenido principal */}
-      <Card className="relative z-10 w-full max-w-md shadow-xl/30">
+      <Card className="relative z-10 w-full max-w-md shadow-xl">
         <CardHeader className="flex flex-col items-center">
-          <img
-            src={logo}
-            className="h-40 w-40 object-contain mb-6"
-            alt="logo"
-          />
-          <CardTitle className="text-center text-2xl font-bold text-gray-800">
-            PRACTICA 2 COACMES
+          <CardTitle className="text-center text-2xl font-bold">
+            {isRegister ? "REGISTRO" : "INICIO DE SESIÓN"}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {loginMutation.isError && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertDescription>{errorMessage}</AlertDescription>
-            </Alert>
-          )}
-
           {!isAuthenticated ? (
-            <form onSubmit={handleLogin} className="space-y-4">
-              <Input
-                type="text"
-                placeholder="Usuario"
-                value={inputUser}
-                onChange={(e) => setInputUser(e.target.value)}
-              />
-              <Input
-                type="password"
-                placeholder="Contraseña"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <Button
-                type="submit"
-                className="w-full bg-blue-500 transition delay-350 duration-500 ease-in-out hover:-translate-y-1 hover:scale-110 hover:bg-indigo-500"
-                disabled={loginMutation.isLoading}
-              >
-                {loginMutation.isLoading ? "Cargando..." : "Iniciar sesión"}
-              </Button>
-            </form>
+            isRegister ? (
+              <form onSubmit={handleRegister} className="space-y-4">
+                <Input
+                  type="text"
+                  placeholder="Usuario"
+                  value={inputUser}
+                  onChange={(e) => setInputUser(e.target.value)}
+                />
+                <Input
+                  type="password"
+                  placeholder="Contraseña"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={registerMutation.isLoading}
+                >
+                  {registerMutation.isLoading ? "Registrando..." : "Registrarse"}
+                </Button>
+                <p className="text-center text-sm">
+                  ¿Ya tienes una cuenta?{" "}
+                  <button
+                    type="button"
+                    onClick={() => setIsRegister(false)}
+                    className="text-primary hover:underline"
+                  >
+                    Inicia sesión
+                  </button>
+                </p>
+              </form>
+            ) : (
+              <form onSubmit={handleLogin} className="space-y-4">
+                <Input
+                  type="text"
+                  placeholder="Usuario"
+                  value={inputUser}
+                  onChange={(e) => setInputUser(e.target.value)}
+                />
+                <Input
+                  type="password"
+                  placeholder="Contraseña"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={loginMutation.isLoading}
+                >
+                  {loginMutation.isLoading ? "Cargando..." : "Iniciar sesión"}
+                </Button>
+                <p className="text-center text-sm">
+                  ¿No tienes una cuenta?{" "}
+                  <button
+                    type="button"
+                    onClick={() => setIsRegister(true)}
+                    className="text-primary hover:underline"
+                  >
+                    Regístrate
+                  </button>
+                </p>
+              </form>
+            )
           ) : (
             <div className="text-center mt-4">
-              <p className="text-lg font-semibold text-gray-700 mb-2">
+              <p className="text-lg font-semibold">
                 ¡Bienvenido, {username}!
               </p>
             </div>

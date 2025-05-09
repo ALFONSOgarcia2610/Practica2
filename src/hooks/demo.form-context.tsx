@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getClimaByCity } from "../apis/climapi";
 import { Thermometer, Wind, MapPin } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"; // Importamos los componentes de shadcn
 import clima from "../clima.png";
 import logo from "../coa.png";
+import { toast } from "sonner"; // Asegúrate de importar toast
+
 export const DemoForm = () => {
   const [city, setCity] = useState("");
 
@@ -14,35 +16,42 @@ export const DemoForm = () => {
     enabled: false, // La consulta no se ejecuta automáticamente
   });
 
+  useEffect(() => {
+    if (error) {
+      toast.error("Ocurrió un error al consultar el clima", {
+        description: (error as Error).message,
+        position: "bottom-right",
+      });
+    }
+  }, [error]);
+
   const handleSearch = () => {
     if (city.trim() === "") {
-      alert("Por favor, ingresa el nombre de una ciudad");
+      toast.error("Por favor, ingresa el nombre de una ciudad", {
+        position: "bottom-right",
+      });
       return;
     }
     refetch(); // Ejecuta la consulta
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen bg-blue-50 p-4">
+    <div className="relative flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
       {/* Imagen de fondo en la esquina inferior izquierda */}
       <div
         className="absolute bottom-0 left-0 w-full h-full bg-no-repeat bg-cover opacity-50"
         style={{
           backgroundImage: `url(${logo})`,
-          backgroundPosition: "left bottom", // Posiciona la imagen en la esquina inferior izquierda
-          backgroundSize: "30%", // Ajusta el tamaño de la imagen
+          backgroundPosition: "left bottom",
+          backgroundSize: "30%",
         }}
       ></div>
 
       {/* Contenido principal */}
       <Card className="relative z-10 w-full max-w-md shadow-lg">
         <CardHeader className="flex flex-col items-center">
-          <img
-            src={clima}
-            alt="Clima"
-            className="w-30 h-30 mb-4"
-          />
-          <CardTitle className="text-center text-2xl font-bold text-blue-700">
+          <img src={clima} alt="Clima" className="w-20 h-20 mb-4" />
+          <CardTitle className="text-center text-2xl font-bold">
             Consulta el Clima
           </CardTitle>
         </CardHeader>
@@ -52,11 +61,11 @@ export const DemoForm = () => {
             value={city}
             onChange={(e) => setCity(e.target.value)}
             placeholder="Ingresa el nombre de una ciudad"
-            className="w-full p-2 border border-gray-300 rounded mb-4"
+            className="w-full p-2 border border-border rounded mb-4 bg-background text-foreground"
           />
           <button
             onClick={handleSearch}
-            className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
+            className="w-full bg-primary text-primary-foreground p-2 rounded hover:bg-primary/90"
           >
             Buscar
           </button>
@@ -91,20 +100,19 @@ export const DemoForm = () => {
             </button>
           )}
 
-          {error && <p className="text-red-500 mt-4">Error: {(error as Error).message}</p>}
           {data && (
-            <div className="bg-white shadow-md rounded-lg p-4 mt-4 space-y-3">
-              <div className="flex items-center text-lg font-semibold text-gray-700">
-                <MapPin className="mr-2 text-blue-600" />
-                Ciudad: <span className="ml-1 text-blue-600">{data.name}</span>
+            <div className="bg-card text-card-foreground shadow-md rounded-lg p-4 mt-4 space-y-3">
+              <div className="flex items-center text-lg font-semibold">
+                <MapPin className="mr-2 text-primary" />
+                Ciudad: <span className="ml-1">{data.name}</span>
               </div>
-              <div className="flex items-center text-lg font-semibold text-gray-700">
-                <Thermometer className="mr-2 text-blue-600" />
-                Temperatura: <span className="ml-1 text-blue-600">{data.main.temp}°C</span>
+              <div className="flex items-center text-lg font-semibold">
+                <Thermometer className="mr-2 text-primary" />
+                Temperatura: <span className="ml-1">{data.main.temp}°C</span>
               </div>
-              <div className="flex items-center text-lg font-semibold text-gray-700">
-                <Wind className="mr-2 text-blue-600" />
-                Viento: <span className="ml-1 text-blue-600">{data.wind.speed} km/h</span>
+              <div className="flex items-center text-lg font-semibold">
+                <Wind className="mr-2 text-primary" />
+                Viento: <span className="ml-1">{data.wind.speed} km/h</span>
               </div>
             </div>
           )}
