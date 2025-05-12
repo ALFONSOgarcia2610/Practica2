@@ -25,7 +25,7 @@ function App() {
       setUsername(inputUser);
 
       // Expiración en días: 5 minutos = 5 / (60 * 24)
-      const expirationTime = 1 / (60 * 24); // ✅ 1 minuto en días
+      const expirationTime = 5 / (60 * 24); // ✅ 1 minuto en días
       const now = Date.now().toString();
 
       Cookies.set("isAuthenticated", "true", { expires: expirationTime });

@@ -3,7 +3,7 @@ import { useAuth } from "../main";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Home, LogOut, Moon, Sun, User, Timer } from "lucide-react";
+import { Home, LogOut, Moon, Sun, User, Edit, Timer } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -20,42 +20,40 @@ export default function Header() {
   const { isAuthenticated, logout, username } = useAuth();
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
 
-useEffect(() => {
-  if (!isAuthenticated) return;
+  useEffect(() => {
+    if (!isAuthenticated) return;
 
-  const cookieCreatedAt = Cookies.get("cookieCreatedAt");
-  if (!cookieCreatedAt) return;
+    const cookieCreatedAt = Cookies.get("cookieCreatedAt");
+    if (!cookieCreatedAt) return;
 
-  const created = parseInt(cookieCreatedAt);
-  if (isNaN(created)) return;
+    const created = parseInt(cookieCreatedAt);
+    if (isNaN(created)) return;
 
-  const oneMinute = 1 * 60 * 1000;
+    const oneMinute = 5 * 60 * 1000;
 
-  const interval = setInterval(() => {
-    const now = Date.now();
-    const timeLeft = oneMinute - (now - created);
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const timeLeft = oneMinute - (now - created);
 
-    if (timeLeft <= 0) {
-      setRemainingTime(0);
-      clearInterval(interval);
-      
-      logout(); // Cierra sesión
+      if (timeLeft <= 0) {
+        setRemainingTime(0);
+        clearInterval(interval);
 
-      // Usamos un pequeño retraso para asegurarnos que el logout se procese antes de mostrar el toast
-      setTimeout(() => {
-        toast.info("Tu sesión ha expirado por inactividad.", {
-          duration: 4000,
-          position: "bottom-right",
-        });
-      }, 100); // 100ms de retraso
-    } else {
-      setRemainingTime(Math.floor(timeLeft / 1000));
-    }
-  }, 1000);
+        logout();
 
-  return () => clearInterval(interval);
-}, [isAuthenticated, logout]);
+        setTimeout(() => {
+          toast.info("Tu sesión ha expirado por inactividad.", {
+            duration: 4000,
+            position: "bottom-right",
+          });
+        }, 100);
+      } else {
+        setRemainingTime(Math.floor(timeLeft / 1000));
+      }
+    }, 1000);
 
+    return () => clearInterval(interval);
+  }, [isAuthenticated, logout]);
 
   const formatTime = (seconds: number): string => {
     const m = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -91,6 +89,7 @@ useEffect(() => {
                     Inicio
                   </Link>
                 </li>
+
                 {isAuthenticated && (
                   <>
                     <li>
@@ -102,6 +101,7 @@ useEffect(() => {
                         Clima
                       </Link>
                     </li>
+
                     <li>
                       <Link
                         to="/demo/form/Pokemon"
@@ -115,18 +115,32 @@ useEffect(() => {
                         Pokedex
                       </Link>
                     </li>
+
                     <li>
-                      <button
-                        onClick={logout}
-                        className="flex items-center gap-3 text-lg font-medium text-destructive hover:text-destructive/80 transition-colors"
+                      <Link
+                        to="/demo/form/changepassword"
+                        className="flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
                       >
-                        <LogOut className="w-6 h-6" />
-                        Cerrar sesión
-                      </button>
+                        <Edit className="w-5 h-5" />
+                        Cambiar Contraseña
+                      </Link>
                     </li>
                   </>
                 )}
               </ul>
+
+              {isAuthenticated && (
+                <div className="mt-auto">
+                  <Button
+                    variant="destructive"
+                    className="w-full flex items-center gap-2"
+                    onClick={logout}
+                  >
+                    <LogOut className="w-5 h-5" />
+                    Cerrar sesión
+                  </Button>
+                </div>
+              )}
             </nav>
           </SheetContent>
         </Sheet>
@@ -144,7 +158,6 @@ useEffect(() => {
           </DropdownMenu>
           <ThemeSelector />
 
-          {/* Mostrar usuario y tiempo si está autenticado */}
           {isAuthenticated && (
             <div className="flex items-center gap-4">
               <h1 className="text-lg font-bold flex items-center mr-4">
@@ -164,4 +177,3 @@ useEffect(() => {
     </header>
   );
 }
-

@@ -1,3 +1,5 @@
+import Cookies from "js-cookie";
+
 const API_URL = 'http://localhost:5000/api/auth';
 
 // Función para registrar un usuario
@@ -39,4 +41,24 @@ export const loginUser = async ({ username, password }: { username: string; pass
   }
 
   return await response.json();
+};
+
+export const changePassword = async (currentPassword: string, newPassword: string) => {
+  const token = Cookies.get("token");
+
+  const response = await fetch(`${API_URL}/changePassword`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.message || 'Error al cambiar la contraseña');
+  }
+
+  return response.json();
 };

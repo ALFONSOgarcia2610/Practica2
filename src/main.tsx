@@ -11,6 +11,7 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 
 import DemoFormAddress from './routes/demo.form.address';
 import DemoFormSimple from './routes/demo.form.simple';
+import ChangePasword from './routes/ChangePasword.tsx';
 import NotFoundRedirect from './routes/NotFoundRedirect.tsx';
 import Header from './components/Header';
 import TanstackQueryLayout from './integrations/tanstack-query/layout';
@@ -139,6 +140,8 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   DemoFormAddress(rootRoute),
   DemoFormSimple(rootRoute),
+  ChangePasword(rootRoute),
+
   createRoute({
     getParentRoute: () => rootRoute,
     path: '*',
