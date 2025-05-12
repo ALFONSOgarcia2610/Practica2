@@ -1,4 +1,4 @@
-import { StrictMode, useState, createContext, useContext } from 'react';
+import { StrictMode, useState, createContext, useContext, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import {
   Outlet,
@@ -29,12 +29,8 @@ import { ActiveThemeProvider } from '@/components/active-theme';
 import Cookies from 'js-cookie';
 
 /** === Lógica de cookies para el tema activo === */
-const activeThemeValue = Cookies.get("active_theme") || "dark"; // Obtener el tema activo desde las cookies
-
-// Verifica si el tema tiene el sufijo "-scaled" (para ajustar el tema si es necesario)
-const isScaled = activeThemeValue.endsWith("-scaled");
-
-console.log("isScaled:", isScaled);  // Para verificar el valor de isScaled, puedes eliminar esta línea después
+const activeThemeValue = Cookies.get('active_theme') || 'dark';
+const isScaled = activeThemeValue.endsWith('-scaled');
 
 /** === AUTENTICACIÓN CON BACKEND === */
 
@@ -59,11 +55,11 @@ export const useAuth = () => {
 
 function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem('isAuthenticated') === 'true';
+    return Cookies.get('isAuthenticated') === 'true';
   });
 
   const [username, setUsername] = useState<string | null>(() => {
-    return localStorage.getItem('username');
+    return Cookies.get('username') || null;
   });
 
   const [redirectMessage, setRedirectMessage] = useState<string | null>(null);
@@ -71,29 +67,32 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (user: string, pass: string): Promise<boolean> => {
     try {
       const response = await loginUser(user, pass);
+      const expirationTime = 5 / (60 * 1000); // Expiración en 5 minutos (en minutos)
+
+      // Guardar en cookies (expiran en 5 minutos)
+      Cookies.set('isAuthenticated', 'true', { expires: expirationTime });
+      Cookies.set('username', user, { expires: expirationTime });
+      Cookies.set('token', response.token, { expires: expirationTime });
+
       setIsAuthenticated(true);
       setUsername(user);
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('username', user);
-      localStorage.setItem('token', response.token);
       return true;
     } catch (error) {
-      setIsAuthenticated(false);
-      setUsername(null);
-      localStorage.setItem('isAuthenticated', 'false');
-      localStorage.removeItem('username');
-      localStorage.removeItem('token');
+      logout(); // Si ocurre un error, hacer logout
       return false;
     }
   };
 
   const logout = () => {
+    Cookies.remove('isAuthenticated');
+    Cookies.remove('username');
+    Cookies.remove('token');
+
     setIsAuthenticated(false);
     setUsername(null);
-    localStorage.setItem('isAuthenticated', 'false');
-    localStorage.removeItem('username');
-    localStorage.removeItem('token');
-    router.navigate({ to: '/' });
+
+    // Redirigir a la página principal después de hacer logout
+    window.location.href = '/';
   };
 
   return (
@@ -116,7 +115,6 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 
 /** === FIN AUTENTICACIÓN === */
 
-// 🧠 Root layout con Toaster y proveedores de tema
 const rootRoute = createRootRoute({
   component: () => (
     <ActiveThemeProvider initialTheme={activeThemeValue}>

@@ -1,11 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { useAuth } from "../main";
+import { toast } from "sonner";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Home, LogOut, Moon, Sun, User } from "lucide-react";
+import { Home, LogOut, Moon, Sun, User, Timer } from "lucide-react";
 import {
   DropdownMenu,
-
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -13,10 +13,55 @@ import logo from "../coa.png";
 import climaIcon from "../clima.png";
 import pokedexIcon from "../poke.png";
 import { ThemeSelector } from "./selector";
+import Cookies from "js-cookie";
+import { useEffect, useState } from "react";
 
 export default function Header() {
   const { isAuthenticated, logout, username } = useAuth();
- 
+  const [remainingTime, setRemainingTime] = useState<number | null>(null);
+
+useEffect(() => {
+  if (!isAuthenticated) return;
+
+  const cookieCreatedAt = Cookies.get("cookieCreatedAt");
+  if (!cookieCreatedAt) return;
+
+  const created = parseInt(cookieCreatedAt);
+  if (isNaN(created)) return;
+
+  const oneMinute = 1 * 60 * 1000;
+
+  const interval = setInterval(() => {
+    const now = Date.now();
+    const timeLeft = oneMinute - (now - created);
+
+    if (timeLeft <= 0) {
+      setRemainingTime(0);
+      clearInterval(interval);
+      
+      logout(); // Cierra sesión
+
+      // Usamos un pequeño retraso para asegurarnos que el logout se procese antes de mostrar el toast
+      setTimeout(() => {
+        toast.info("Tu sesión ha expirado por inactividad.", {
+          duration: 4000,
+          position: "bottom-right",
+        });
+      }, 100); // 100ms de retraso
+    } else {
+      setRemainingTime(Math.floor(timeLeft / 1000));
+    }
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, [isAuthenticated, logout]);
+
+
+  const formatTime = (seconds: number): string => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
 
   return (
     <header className="bg-primary text-primary-foreground shadow-md fixed top-0 left-0 w-full z-50">
@@ -62,7 +107,11 @@ export default function Header() {
                         to="/demo/form/Pokemon"
                         className="flex items-center gap-3 text-lg font-medium hover:text-primary transition-colors"
                       >
-                        <img src={pokedexIcon} alt="Pokedex" className="w-6 h-6" />
+                        <img
+                          src={pokedexIcon}
+                          alt="Pokedex"
+                          className="w-6 h-6"
+                        />
                         Pokedex
                       </Link>
                     </li>
@@ -84,7 +133,6 @@ export default function Header() {
 
         {/* Lado derecho */}
         <div className="flex items-center gap-4 mr-9">
-          {/* Alternador de tema */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon">
@@ -93,19 +141,27 @@ export default function Header() {
                 <span className="sr-only">Toggle theme</span>
               </Button>
             </DropdownMenuTrigger>
-            
           </DropdownMenu>
           <ThemeSelector />
 
-          {/* Mostrar usuario si está autenticado */}
+          {/* Mostrar usuario y tiempo si está autenticado */}
           {isAuthenticated && (
-            <h1 className="text-lg font-bold flex items-center mr-4">
-              <User className="mr-2 w-6 h-6" />
-              {username}
-            </h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-lg font-bold flex items-center mr-4">
+                <User className="mr-2 w-6 h-6" />
+                {username}
+              </h1>
+              <div className="flex items-center gap-1 text-sm">
+                <Timer className="w-4 h-4" />
+                {remainingTime !== null
+                  ? formatTime(remainingTime)
+                  : "calculando..."}
+              </div>
+            </div>
           )}
         </div>
       </div>
     </header>
   );
 }
+

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMutation } from "@tanstack/react-query";
 import { registerUser, loginUser } from "./db/db";
 import { toast } from "sonner";
+import Cookies from "js-cookie";
 
 function App() {
   const { isAuthenticated, setIsAuthenticated, username, setUsername } = useAuth();
@@ -14,23 +15,28 @@ function App() {
   const [inputUser, setInputUser] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [isRegister, setIsRegister] = useState(false); // Estado para alternar entre login y registro
+  const [isRegister, setIsRegister] = useState(false);
 
-  // Mutación para iniciar sesión
   const loginMutation = useMutation({
     mutationFn: loginUser,
     onSuccess: (data) => {
       console.log("Inicio de sesión exitoso:", data);
       setIsAuthenticated(true);
       setUsername(inputUser);
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("username", inputUser);
-      localStorage.setItem("token", data.token);
+
+      // Expiración en días: 5 minutos = 5 / (60 * 24)
+      const expirationTime = 1 / (60 * 24); // ✅ 1 minuto en días
+      const now = Date.now().toString();
+
+      Cookies.set("isAuthenticated", "true", { expires: expirationTime });
+      Cookies.set("username", inputUser, { expires: expirationTime });
+      Cookies.set("token", data.token, { expires: expirationTime });
+      Cookies.set("cookieCreatedAt", now, { expires: expirationTime }); // ✅ Aquí se guarda el timestamp
+
       setErrorMessage("");
       setInputUser("");
       setPassword("");
 
-      // Mostrar toast de éxito
       toast.success("Inicio de sesión exitoso", {
         position: "bottom-right",
         duration: 3000,
@@ -42,13 +48,14 @@ function App() {
       setErrorMessage(msg);
       setIsAuthenticated(false);
       setUsername(null);
-      localStorage.setItem("isAuthenticated", "false");
-      localStorage.removeItem("username");
-      localStorage.removeItem("token");
+
+      Cookies.set("isAuthenticated", "false");
+      Cookies.remove("username");
+      Cookies.remove("token");
+      Cookies.remove("cookieCreatedAt"); // Limpieza por si existía
     },
   });
 
-  // Mutación para registrar un usuario
   const registerMutation = useMutation({
     mutationFn: async ({ username, password }: { username: string; password: string }) => {
       return await registerUser(username, password);
@@ -58,7 +65,6 @@ function App() {
         position: "bottom-right",
       });
 
-      // Iniciar sesión automáticamente después del registro
       loginMutation.mutate({ username: inputUser, password });
     },
     onError: (error: any) => {
@@ -69,7 +75,6 @@ function App() {
     },
   });
 
-  // Mostrar toast si hay error en el inicio de sesión
   useEffect(() => {
     if (loginMutation.isError && errorMessage) {
       toast.error("Error de inicio de sesión", {
